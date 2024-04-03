@@ -2,9 +2,6 @@
     "beberlei/doctrineextensions": {
         "version": "v1.3.0"
     },
-    "behat/transliterator": {
-        "version": "v1.3.0"
-    },
     "doctrine/annotations": {
         "version": "1.13",
         "recipe": {
@@ -33,12 +30,12 @@
         "version": "v0.5.3"
     },
     "doctrine/doctrine-bundle": {
-        "version": "2.5",
+        "version": "2.12",
         "recipe": {
             "repo": "github.com/symfony/recipes",
-            "branch": "master",
-            "version": "2.4",
-            "ref": "ddddd8249dd55bbda16fa7a45bb7499ef6f8e90e"
+            "branch": "main",
+            "version": "2.12",
+            "ref": "67fe5ec6347935627365af33a056fd8fcb1871ab"
         },
         "files": [
             "config/packages/doctrine.yaml",
@@ -59,12 +56,12 @@
         ]
     },
     "doctrine/doctrine-migrations-bundle": {
-        "version": "3.2",
+        "version": "3.3",
         "recipe": {
             "repo": "github.com/symfony/recipes",
-            "branch": "master",
+            "branch": "main",
             "version": "3.1",
-            "ref": "ee609429c9ee23e22d6fa5728211768f51ed2818"
+            "ref": "1d01ec03c6ecbd67c3375c5478c9a423ae5d6a33"
         },
         "files": [
             "config/packages/doctrine_migrations.yaml",
@@ -83,9 +80,6 @@
     "doctrine/lexer": {
         "version": "1.2.3"
     },
-    "doctrine/migrations": {
-        "version": "3.4.1"
-    },
     "doctrine/orm": {
         "version": "2.11.2"
     },
@@ -97,9 +91,6 @@
     },
     "friendsofphp/proxy-manager-lts": {
         "version": "v1.0.7"
-    },
-    "gedmo/doctrine-extensions": {
-        "version": "v3.5.0"
     },
     "laminas/laminas-code": {
         "version": "4.5.1"
@@ -164,10 +155,10 @@
         ]
     },
     "stof/doctrine-extensions-bundle": {
-        "version": "1.7",
+        "version": "1.11",
         "recipe": {
             "repo": "github.com/symfony/recipes-contrib",
-            "branch": "master",
+            "branch": "main",
             "version": "1.2",
             "ref": "e805aba9eff5372e2d149a9ff56566769e22819d"
         },

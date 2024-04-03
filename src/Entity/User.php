@@ -2,46 +2,90 @@
 
 namespace App\Entity;
 
-use App\Entity\Contract\UserInterface;
-use App\Entity\Exception\InvalidRoleException;
-use App\Entity\Utils\HasTimestampTrait;
-use App\Entity\Utils\HasUuidTrait;
 use App\Repository\UserRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
-#[ORM\Table(name: 'app_user')]
-class User implements UserInterface, PasswordAuthenticatedUserInterface
+#[ORM\Table(name: 'user')]
+class User
 {
-    use HasTimestampTrait;
-    use HasUuidTrait;
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column]
+    private int $id;
 
-    public const ROLE_USER = 'ROLE_USER';
-    public const ROLE_ADMIN = 'ROLE_ADMIN';
+    #[ORM\Column(length: 255)]
+    private string $lastName;
 
-    public const ROLE_DEFAULT = self::ROLE_USER;
+    #[ORM\Column(length: 255)]
+    private string $firstName;
 
-    public const ROLES = [
-        self::ROLE_USER,
-        self::ROLE_ADMIN
-    ];
+    #[ORM\Column(length: 255, unique: true)]
+    private string $email;
 
-    #[ORM\Column(type: 'string', length: 180, unique: true)]
+    #[ORM\Column(length: 255, unique: true)]
     private string $username;
 
-    #[ORM\Column(type: 'json')]
-    private array $roles = [];
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $bio = null;
 
-    #[ORM\Column(type: 'string')]
-    private string $password;
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $avatar = null;
 
-    #[ORM\Column(type: 'boolean', options: ['default' => true])]
-    private bool $enabled = true;
+    #[ORM\OneToMany(mappedBy: 'author', targetEntity: Article::class, cascade: ['remove'], orphanRemoval: true)]
+    private Collection $articles;
 
-    public function __toString(): string
+    #[ORM\OneToMany(mappedBy: 'author', targetEntity: Comment::class, cascade: ['remove'], orphanRemoval: true)]
+    private Collection $comments;
+
+    public function __construct()
     {
-        return $this->getUserIdentifier();
+        $this->articles = new ArrayCollection();
+        $this->comments = new ArrayCollection();
+    }
+
+    public function getId(): int
+    {
+        return $this->id;
+    }
+
+    public function getLastName(): string
+    {
+        return $this->lastName;
+    }
+
+    public function setLastName(string $lastName): static
+    {
+        $this->lastName = $lastName;
+
+        return $this;
+    }
+
+    public function getFirstName(): string
+    {
+        return $this->firstName;
+    }
+
+    public function setFirstName(string $firstName): static
+    {
+        $this->firstName = $firstName;
+
+        return $this;
+    }
+
+    public function getEmail(): string
+    {
+        return $this->email;
+    }
+
+    public function setEmail(string $email): static
+    {
+        $this->email = $email;
+
+        return $this;
     }
 
     public function getUsername(): string
@@ -49,99 +93,88 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->username;
     }
 
-    public function setUsername(string $username): self
+    public function setUsername(string $username): static
     {
         $this->username = $username;
 
         return $this;
     }
 
-    /**
-     * @see UserInterface
-     */
-    public function getUserIdentifier(): string
+    public function getBio(): ?string
     {
-        return $this->username;
+        return $this->bio;
+    }
+
+    public function setBio(?string $bio): static
+    {
+        $this->bio = $bio;
+
+        return $this;
+    }
+
+    public function getAvatar(): ?string
+    {
+        return $this->avatar;
+    }
+
+    public function setAvatar(string $avatar): static
+    {
+        $this->avatar = $avatar;
+
+        return $this;
     }
 
     /**
-     * @see UserInterface
+     * @return Collection<int, Article>
      */
-    public function getRoles(): array
+    public function getArticles(): Collection
     {
-        $roles = $this->roles;
-        // guarantee every user at least has ROLE_USER
-        $roles[] = self::ROLE_DEFAULT;
-
-        return array_unique($roles);
+        return $this->articles;
     }
 
-    /**
-     * @throws InvalidRoleException
-     */
-    public function addRole(string $roleString): self
+    public function addArticle(Article $article): static
     {
-        if (in_array($roleString, self::ROLES, true)) {
-            $this->roles[] = $roleString;
-
-            return $this;
+        if (!$this->articles->contains($article)) {
+            $this->articles->add($article);
+            $article->setAuthor($this);
         }
 
-        throw InvalidRoleException::createFromUserAndRole($this, $roleString);
-    }
-
-    public function hasRole(string $wantedRole): bool
-    {
-        return in_array($wantedRole, $this->roles, true);
-    }
-
-    public function removeRole(string $roleString): self
-    {
-        $this->roles = array_filter($this->roles, static function ($value) use ($roleString) {
-            return $value !== $roleString;
-        });
-
         return $this;
     }
 
-    public function setRoles(array $roles): self
+    public function removeArticle(Article $article): static
     {
-        $this->roles = $roles;
+        if ($this->articles->removeElement($article) && $article->getAuthor() === $this) {
+            $article->setAuthor(null);
+        }
 
         return $this;
     }
 
     /**
-     * @see PasswordAuthenticatedUserInterface
+     * @return Collection<int, Comment>
      */
-    public function getPassword(): string
+    public function getComments(): Collection
     {
-        return $this->password;
+        return $this->comments;
     }
 
-    public function setPassword(string $password): self
+    public function addComment(Comment $comment): static
     {
-        $this->password = $password;
+        if (!$this->comments->contains($comment)) {
+            $this->comments->add($comment);
+            $comment->setAuthor($this);
+        }
 
         return $this;
     }
 
-    /**
-     * @see UserInterface
-     */
-    public function eraseCredentials(): void
+    public function removeComment(Comment $comment): static
     {
-    }
-
-    public function setEnabled(bool $enabled): self
-    {
-        $this->enabled = $enabled;
+        if ($this->comments->removeElement($comment) && $comment->getAuthor() === $this) {
+            $comment->setAuthor(null);
+        }
 
         return $this;
-    }
-
-    public function isEnabled(): bool
-    {
-        return $this->enabled;
     }
 }
