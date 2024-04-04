@@ -8,6 +8,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/users')]
 class UserController extends AbstractController
@@ -16,6 +17,7 @@ class UserController extends AbstractController
     {
     }
 
+    #[IsGranted('ROLE_ADMIN', message: 'You should be an admin')]
     #[Route('/{id}', name: 'find_user', methods: ['GET'])]
     public function find(User $user): JsonResponse
     {
@@ -56,31 +58,6 @@ class UserController extends AbstractController
     public function delete(User $user): JsonResponse
     {
         $this->entityManager->remove($user);
-        $this->entityManager->flush();
-
-        return $this->json($user);
-    }
-
-    #[Route('/', name: 'create_user', methods: ['POST'])]
-    public function create(Request $request): JsonResponse
-    {
-        $body = $request->toArray();
-
-        $user = new User();
-        $user->setFirstName($body['firstName'])
-            ->setLastName($body['lastName'])
-            ->setEmail($body['email'])
-            ->setUsername($body['username']);
-
-        if (array_key_exists('bio', $body)) {
-            $user->setBio($body['bio']);
-        }
-
-        if (array_key_exists('avatar', $body)) {
-            $user->setAvatar($body['avatar']);
-        }
-
-        $this->entityManager->persist($user);
         $this->entityManager->flush();
 
         return $this->json($user);
