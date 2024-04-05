@@ -26,13 +26,26 @@ security:
                 success_handler: lexik_jwt_authentication.handler.authentication_success
                 failure_handler: lexik_jwt_authentication.handler.authentication_failure
 
+        api:
+            pattern: ^/api
+            jwt: ~
+            lazy: true
+
         main:
             lazy: true
-            jwt: ~
+            form_login:
+                login_path: app_login
+                check_path: app_login
+                enable_csrf: true
+                default_target_path: app_home
+            logout:
+                path: app_logout
+                # where to redirect after logout
+                # target: app_any_route
 
     # Easy way to control access for large sections of your site
     # Note: Only the *first* access control that matches will be used
     access_control:
       - { path: ^/api/login_check, roles: PUBLIC_ACCESS }
       - { path: ^/register, roles: PUBLIC_ACCESS }
-      - { path: ^/, roles: IS_AUTHENTICATED_FULLY }
+      - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
