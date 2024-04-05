@@ -32,7 +32,6 @@ class CategoryController extends AbstractController
         return $this->json($category);
     }
 
-    #[IsGranted('ROLE_ADMIN', message: 'You should be an administrator')]
     #[Route('/', name: 'create_category', methods: ['POST'])]
     public function create(Request $request): JsonResponse
     {
