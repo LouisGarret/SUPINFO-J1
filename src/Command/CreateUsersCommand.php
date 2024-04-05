@@ -3,6 +3,7 @@
 namespace App\Command;
 
 use App\Entity\User;
+use App\Factory\UserFactory;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -21,7 +22,7 @@ class CreateUsersCommand extends Command
 {
     public function __construct(
         private EntityManagerInterface $entityManager,
-        private UserPasswordHasherInterface $passwordHasher
+        private UserFactory $userFactory
     ) {
         parent::__construct();
     }
@@ -40,12 +41,13 @@ class CreateUsersCommand extends Command
         $progressBar->start();
 
         for ($i = 0; $i < $numberOfUser; $i++) {
-            $user = new User();
-            $user->setFirstName(sprintf('Prénom %s', $i))
-                ->setLastName(sprintf('Nom %s', $i))
-                ->setEmail(sprintf('email%s@email.com', $i))
-                ->setUsername(sprintf('Username %s', $i));
-            $user->setPassword($this->passwordHasher->hashPassword($user, 'test'));
+            $user = $this->userFactory->create(
+                sprintf('Prénom %s', $i),
+                sprintf('Nom %s', $i),
+                sprintf('email%s@email.com', $i),
+                sprintf('Username %s', $i),
+                'test'
+            );
 
             $this->entityManager->persist($user);
             $progressBar->advance();
