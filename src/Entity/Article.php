@@ -10,6 +10,7 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Gedmo\Mapping\Annotation as Gedmo;
+use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: ArticleRepository::class)]
@@ -26,15 +27,19 @@ class Article
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['articles:read'])]
     private int $id;
 
     #[ORM\Column(length: 255)]
+    #[Groups(['articles:read'])]
     private string $title;
 
     #[ORM\Column(type: Types::TEXT)]
+    #[Groups(['articles:read'])]
     private string $content;
 
     #[ORM\Column(nullable: true)]
+    #[Groups(['articles:read'])]
     private ?DateTimeImmutable $publishedAt;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
@@ -43,6 +48,7 @@ class Article
 
     #[ORM\Column(length: 255, unique: true)]
     #[Gedmo\Slug(fields: ['title'])]
+    #[Groups(['articles:read'])]
     private string $slug;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
@@ -50,13 +56,16 @@ class Article
 
     #[ORM\Column(length: 255)]
     #[Assert\Choice(choices: self::AVAILABLE_STATUS)]
+    #[Groups(['articles:read'])]
     private string $status;
 
     #[ORM\ManyToOne(inversedBy: 'articles')]
     #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['articles:read'])]
     private User $author;
 
     #[ORM\ManyToOne(inversedBy: 'articles')]
+    #[Groups(['articles:read'])]
     private ?Category $category = null;
 
     #[ORM\OneToMany(mappedBy: 'article', targetEntity: Comment::class, orphanRemoval: true)]

@@ -2,31 +2,37 @@
 
 namespace App\Controller;
 
+use App\Factory\UserFactory;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
 
 class SecurityController extends AbstractController
 {
-    #[Route(path: '/login', name: 'app_login')]
-    public function login(AuthenticationUtils $authenticationUtils): Response
+    public function __construct(private readonly EntityManagerInterface $entityManager)
     {
-        // get the login error if there is one
-        $error = $authenticationUtils->getLastAuthenticationError();
-
-        // last username entered by the user
-        $lastUsername = $authenticationUtils->getLastUsername();
-
-        return $this->render('security/login.html.twig', [
-            'last_username' => $lastUsername,
-            'error' => $error,
-        ]);
     }
 
-    #[Route(path: '/logout', name: 'app_logout')]
-    public function logout(): void
+    #[Route('/api/register', name: 'register', methods: ['POST'])]
+    public function create(Request $request, UserFactory $userFactory): JsonResponse
     {
-        throw new \LogicException('This method can be blank - it will be intercepted by the logout key on your firewall.');
+        $body = $request->toArray();
+
+        $user = $userFactory->create(
+            $body['firstName'],
+            $body['lastName'],
+            $body['email'],
+            $body['username'],
+            $body['password'],
+            $body['bio'] ?? null,
+            $body['avatar'] ?? null,
+        );
+
+        $this->entityManager->persist($user);
+        $this->entityManager->flush();
+
+        return $this->json($user);
     }
 }

@@ -13,6 +13,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
+use Symfony\Component\PasswordHasher\PasswordHasherInterface;
 
 #[AsCommand(
     name: 'app:create:users',
@@ -22,7 +23,7 @@ class CreateUsersCommand extends Command
 {
     public function __construct(
         private EntityManagerInterface $entityManager,
-        private UserFactory $userFactory
+        private UserFactory $userFactory,
     ) {
         parent::__construct();
     }

@@ -1,64 +1,118 @@
 <?php
 
-namespace App\Tests\Controller;
+namespace App\Test\Controller;
 
 use App\Entity\Category;
-use App\Entity\User;
+use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\EntityRepository;
+use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 class CategoryControllerTest extends WebTestCase
 {
-    public function testCreateCategory(): void
+    private KernelBrowser $client;
+    private EntityManagerInterface $manager;
+    private EntityRepository $repository;
+    private string $path = '/category/';
+
+    protected function setUp(): void
     {
-        $client = static::createClient();
-        $entityManager = $this->getContainer()->get('doctrine.orm.entity_manager');
+        $this->client = static::createClient();
+        $this->manager = static::getContainer()->get('doctrine')->getManager();
+        $this->repository = $this->manager->getRepository(Category::class);
 
-        $crawler = $client->request(
-            method: 'POST',
-            uri: '/api/login_check',
-            server: [
-                'CONTENT_TYPE' => 'application/json'
-            ],
-            content: json_encode([
-                'username' => 'lougarre2t',
-                'password' => 'Azerty01'
-            ], JSON_THROW_ON_ERROR)
-        );
+        foreach ($this->repository->findAll() as $object) {
+            $this->manager->remove($object);
+        }
 
-        $authResponse = json_decode($client->getResponse()->getContent(), true);
-        $token = $authResponse['token'];
-
-        $crawler = $client->request(
-            method: 'POST',
-            uri: '/categories/',
-            server: [
-                'HTTP_AUTHORIZATION' => 'Bearer ' . $token
-            ],
-            content: json_encode([
-                'name' => 'Un nom',
-                'description' => 'Une description'
-            ], JSON_THROW_ON_ERROR)
-        );
-
-        $response = json_decode($client->getResponse()->getContent(), true, 512, JSON_THROW_ON_ERROR);
-
-        self::assertResponseIsSuccessful();
-        self::assertArrayHasKey('name', $response);
-        self::assertArrayHasKey('description', $response);
-        self::assertEquals('Un nom', $response['name']);
-        self::assertEquals('Une description', $response['description']);
-
-        $createdCategory = $entityManager->getRepository(Category::class)->find($response['id']);
-
-        self::assertEquals('Un nom', $createdCategory->getName());
-        self::assertEquals('Une description', $createdCategory->getDescription());
+        $this->manager->flush();
     }
 
-    public function tearDown(): void
+    public function testIndex(): void
     {
-        $entityManager = $this->getContainer()->get('doctrine.orm.entity_manager');
-        $category = $entityManager->getRepository(Category::class)->findOneBy(['name' => 'Un nom']);
-        $entityManager->remove($category);
-        $entityManager->flush();
+        $crawler = $this->client->request('GET', $this->path);
+
+        self::assertResponseStatusCodeSame(200);
+        self::assertPageTitleContains('Category index');
+
+        // Use the $crawler to perform additional assertions e.g.
+        // self::assertSame('Some text on the page', $crawler->filter('.p')->first());
+    }
+
+    public function testNew(): void
+    {
+        $this->markTestIncomplete();
+        $this->client->request('GET', sprintf('%snew', $this->path));
+
+        self::assertResponseStatusCodeSame(200);
+
+        $this->client->submitForm('Save', [
+            'category[name]' => 'Testing',
+            'category[description]' => 'Testing',
+        ]);
+
+        self::assertResponseRedirects('/sweet/food/');
+
+        self::assertSame(1, $this->getRepository()->count([]));
+    }
+
+    public function testShow(): void
+    {
+        $this->markTestIncomplete();
+        $fixture = new Category();
+        $fixture->setName('My Title');
+        $fixture->setDescription('My Title');
+
+        $this->manager->persist($fixture);
+        $this->manager->flush();
+
+        $this->client->request('GET', sprintf('%s%s', $this->path, $fixture->getId()));
+
+        self::assertResponseStatusCodeSame(200);
+        self::assertPageTitleContains('Category');
+
+        // Use assertions to check that the properties are properly displayed.
+    }
+
+    public function testEdit(): void
+    {
+        $this->markTestIncomplete();
+        $fixture = new Category();
+        $fixture->setName('Value');
+        $fixture->setDescription('Value');
+
+        $this->manager->persist($fixture);
+        $this->manager->flush();
+
+        $this->client->request('GET', sprintf('%s%s/edit', $this->path, $fixture->getId()));
+
+        $this->client->submitForm('Update', [
+            'category[name]' => 'Something New',
+            'category[description]' => 'Something New',
+        ]);
+
+        self::assertResponseRedirects('/category/');
+
+        $fixture = $this->repository->findAll();
+
+        self::assertSame('Something New', $fixture[0]->getName());
+        self::assertSame('Something New', $fixture[0]->getDescription());
+    }
+
+    public function testRemove(): void
+    {
+        $this->markTestIncomplete();
+        $fixture = new Category();
+        $fixture->setName('Value');
+        $fixture->setDescription('Value');
+
+        $this->manager->remove($fixture);
+        $this->manager->flush();
+
+        $this->client->request('GET', sprintf('%s%s', $this->path, $fixture->getId()));
+        $this->client->submitForm('Delete');
+
+        self::assertResponseRedirects('/category/');
+        self::assertSame(0, $this->repository->count([]));
     }
 }

@@ -3,79 +3,42 @@
 namespace App\Controller;
 
 use App\Entity\Article;
-use App\Form\ArticleType;
-use App\Repository\ArticleRepository;
+use App\Service\ArticleService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
-#[Route('/article')]
-class ArticleController extends AbstractController
+#[Route('/api/articles')]
+final class ArticleController extends AbstractController
 {
-    #[Route('/', name: 'app_article_index', methods: ['GET'])]
-    public function index(ArticleRepository $articleRepository): Response
-    {
-        return $this->render('article/index.html.twig', [
-            'articles' => $articleRepository->findAll(),
-        ]);
+    public function __construct(private readonly EntityManagerInterface $entityManager){
     }
 
-    #[Route('/new', name: 'app_article_new', methods: ['GET', 'POST'])]
-    public function new(Request $request, EntityManagerInterface $entityManager): Response
+    #[Route('/', name: 'get_all_articles', methods: ['GET'])]
+    public function getAllArticles(): JsonResponse
     {
-        $article = new Article();
-        $form = $this->createForm(ArticleType::class, $article);
-        $form->handleRequest($request);
+        $articles = $this->entityManager->getRepository(Article::class)->findAll();
 
-        if ($form->isSubmitted() && $form->isValid()) {
-            $entityManager->persist($article);
-            $entityManager->flush();
-
-            return $this->redirectToRoute('app_article_index', [], Response::HTTP_SEE_OTHER);
-        }
-
-        return $this->render('article/new.html.twig', [
-            'article' => $article,
-            'form' => $form,
-        ]);
+        return new JsonResponse($articles);
     }
 
-    #[Route('/{id}', name: 'app_article_show', methods: ['GET'])]
-    public function show(Article $article): Response
+    #[Route('/', name: 'add_article', methods: ['POST'])]
+    public function addArticle(Request $request, ArticleService $articleService): JsonResponse
     {
-        return $this->render('article/show.html.twig', [
-            'article' => $article,
-        ]);
+        $article = $articleService->add($request);
+
+        return $this->json(data: $article, context: ['groups' => ['articles:read']]);
     }
 
-    #[Route('/{id}/edit', name: 'app_article_edit', methods: ['GET', 'POST'])]
-    public function edit(Request $request, Article $article, EntityManagerInterface $entityManager): Response
+    #[Route('/{id}', name: 'delete_article', methods: ['DELETE'])]
+    #[IsGranted('POST_DELETE', 'article', 'You can\'t delete an article that is not yours')]
+    public function deleteArticle(Article $article, ArticleService $articleService): JsonResponse
     {
-        $form = $this->createForm(ArticleType::class, $article);
-        $form->handleRequest($request);
+        $articleService->delete($article);
 
-        if ($form->isSubmitted() && $form->isValid()) {
-            $entityManager->flush();
-
-            return $this->redirectToRoute('app_article_index', [], Response::HTTP_SEE_OTHER);
-        }
-
-        return $this->render('article/edit.html.twig', [
-            'article' => $article,
-            'form' => $form,
-        ]);
-    }
-
-    #[Route('/{id}', name: 'app_article_delete', methods: ['POST'])]
-    public function delete(Request $request, Article $article, EntityManagerInterface $entityManager): Response
-    {
-        if ($this->isCsrfTokenValid('delete'.$article->getId(), $request->request->get('_token'))) {
-            $entityManager->remove($article);
-            $entityManager->flush();
-        }
-
-        return $this->redirectToRoute('app_article_index', [], Response::HTTP_SEE_OTHER);
+        return $this->json('OK');
     }
 }
